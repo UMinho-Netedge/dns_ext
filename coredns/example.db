@@ -1,0 +1,5 @@
+example.com.        IN  SOA dns.example.com. robbmanes.example.com. 2015082544 7200 3600 1209600 3600
+gateway.example.com.    IN  A   192.168.1.10
+dns.example.com.    IN  A   192.168.1.120
+host.example.com.   IN  A   192.168.1.13
+server.example.com. IN  CNAME   host.example.com

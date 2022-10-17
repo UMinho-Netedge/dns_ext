@@ -1,0 +1,29 @@
+(snip_base) {
+    log
+    errors
+}
+
+.:53 {
+    import snip_base
+    forward . 8.8.8.8 9.9.9.9
+    reload
+}
+
+example.com:53 {
+    import snip_base
+    file /etc/coredns/example.db {
+        reload 5s
+    }
+}
+
+example2.com:53 {
+    whoami
+}
+
+example.org {
+    file /etc/coredns/example.org
+    prometheus     # enable metrics
+    errors         # show errors
+    log            # enable query logs
+}
+

@@ -1,0 +1,25 @@
+version: "1.0"
+
+services:
+  api:
+    image: python:3.9
+    command: bash -c "useradd -m -d /home/api coredns_api && apt update && pip install -r /home/api/requirements.txt && python3 /home/api/main.py --mongodb_database mep"
+    volumes:
+      - ./:/home/api
+    ports:
+      - "8080:8080"
+    environment:
+      USER: coredns_api
+      PATH: "$PATH:/home/api/.local/bin"
+    tty: true
+
+  coredns:
+    image: coredns/coredns:1.10.0
+    container_name: coredns
+    hostname: coredns
+    restart: always
+    ports:
+      - "1053:1053/udp"
+    volumes:
+      - ./coredns/:/etc/coredns
+    command: -conf /etc/coredns/Corefile
