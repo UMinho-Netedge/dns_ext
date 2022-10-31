@@ -3,27 +3,33 @@
     errors
 }
 
-.:53 {
+.:1053 {
     import snip_base
     forward . 8.8.8.8 9.9.9.9
     reload
 }
 
-example.com:53 {
+example.com:1053 {
     import snip_base
     file /etc/coredns/example.db {
         reload 5s
     }
 }
 
-example2.com:53 {
+example2.com:1053 {
     whoami
 }
 
-example.org {
+example.org:1053 {
     file /etc/coredns/example.org
     prometheus     # enable metrics
     errors         # show errors
     log            # enable query logs
 }
 
+zone3:1053 {
+    import snip_base
+    file /etc/coredns/zone3.db {
+        reload 5s
+    }
+}

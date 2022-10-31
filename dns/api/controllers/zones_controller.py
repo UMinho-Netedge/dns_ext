@@ -3,42 +3,119 @@ import sys
 import jsonschema
 import cherrypy
 import time
+import re
+import os
 
 sys.path.append("../../")
 from dns.models import *
 from json.decoder import JSONDecodeError
+from os.path import exists
+
+PORT = '1053'
+FILES_PATH = "/home/api/coredns/"
+
+def zone_block_pattern(zoneName: str, port: str):
+    return "\n%s:%s {\n    import snip_base\n    file /etc/coredns/%s.db {\n        reload 5s\n    }\n}" %(zoneName, port, zoneName)
 
 
 class ZonesController:
-
-    @cherrypy.tools.json_in()
-    def add_zone(self, zoneName: str):
-        cherrypy.log("Add Zone %s!" %(zoneName))
+    @json_out(cls=NestedEncoder)
+    def add_zone(self, zoneName: str, mname: str, rname: str, refresh: str, retry: str, expire: str, ttl: str):
+        if exists(FILES_PATH + zoneName + ".db"):
+            error_msg = "Zone %s already exists." % (zoneName)
+            error = Forbidden(error_msg)
+            return error.message()
 
         soa = SOA(
                     name=zoneName,
-                    mname="ns1.primaryserver.com",
-                    rname="admin.netedge.com",
+                    mname=mname,
+                    rname=rname,
                     serial=time.strftime("%Y%m%d%H", time.localtime()),
-                    refresh="7200",
-                    retry="3600",
-                    expire="1209600",
-                    ttl="3600"
+                    refresh=refresh,
+                    retry=retry,
+                    expire=expire,
+                    ttl=ttl
                     )
 
-        with open("/home/api/coredns/%s.db" %(zoneName), mode='w+') as f:
-            f.write(str(soa))
-            #f.write("example.com.        IN  SOA dns.example.com. robbmanes.example.com. 2015082544 7200 3600 1209600 3600")
+        try:
+            # Create zonefile
+            with open(FILES_PATH + "%s.db" %(zoneName), mode='w') as f:
+                f.write(str(soa))
+        except EnvironmentError as e:
+            error_msg = "Error creating zone file:\n" + e
+            error = InternalServerError(error_msg)
+            return error.message()
 
-        core_file_zone = "\n%s:1053 {\n\timport snip_base\n\tfile /etc/coredns/%s.db {\n\t\treload 5s\n\t}\n}\n" %(zoneName, zoneName)
-        with open("/home/api/coredns/Corefile", mode='a') as f:
-            f.write(core_file_zone)
+        try:
+            # Append the new zone configuration to Corefile
+            core_file_zone = zone_block_pattern(zoneName, PORT)
+            with open(FILES_PATH + "Corefile", mode='a') as f:
+                f.write(core_file_zone)
+        except EnvironmentError as e:
+            error_msg = "Error creating opening Corefile:\n" + e
+            error = InternalServerError(error_msg)
+            return error.message()
 
-        with open("/home/api/coredns/Corefile", mode='r') as f:
-            content = f.read()
-        cherrypy.log(content)
+        cherrypy.log("Created new zone named %s with SOA %s" %(zoneName, str(soa)))
+        cherrypy.response.status = 200
         
 
-    @cherrypy.tools.json_in()
+    @json_out(cls=NestedEncoder)
     def delete_zone(self, zoneName: str):
-        cherrypy.log("Delete Zone %s!" %(zoneName))
+            
+        try:
+            with open(FILES_PATH + "Corefile", mode='r') as f:
+                content = f.read()
+
+            with open(FILES_PATH + "Corefile", mode='w') as f:
+                new_content = re.sub(zone_block_pattern(zoneName, PORT), '', content, re.MULTILINE)
+                f.write(new_content)
+        except EnvironmentError as e:
+            error_msg = "Error opening Corefile:\n" + e
+            error = InternalServerError(error_msg)
+            return error.message()
+
+        try:
+            os.remove(FILES_PATH + "%s.db" %(zoneName))
+        except OSError:
+            error_msg = "Inexistent zone name."
+            error = NotFound(error_msg)
+            return error.message()
+
+        cherrypy.log("Deleted Zone %s!" %(zoneName))
+        cherrypy.response.status = 200
+
+
+    @json_out(cls=NestedEncoder)
+    def add_a_record(self, zoneName: str, name: str, ip: str):
+        a_record = A_rec(name, ip)
+        with open(FILES_PATH + "%s.db" %(zoneName), mode='a') as f:
+            f.write(str(a_record))
+
+        with open(FILES_PATH + "%s.db" %(zoneName), mode='r') as f:
+            # SOA serial increment so zone update is granted
+            content = f.readlines()
+            
+        soa = SOA.from_str(content[0])
+        soa.update()
+        content[0] = str(soa)
+
+        with open(FILES_PATH + "%s.db" %(zoneName), mode='w') as f:
+            f.write(''.join(content))
+
+        cherrypy.log("Add A record line in zone %s: %s" %(zoneName, str(a_record)))
+
+
+    @json_out(cls=NestedEncoder)
+    def delete_a_record(self, zoneName: str, name: str):
+        with open(FILES_PATH + zoneName + ".db", mode='r') as f:
+            content = f.readlines()
+
+        soa = SOA.from_str(content[0])
+        soa.update()
+        content[0] = str(soa)
+        content = ''.join(content)
+
+        with open(FILES_PATH + zoneName + ".db", mode='w') as f:
+            new_content = re.sub(r'%s.*\n' %(name), '', content, re.DOTALL)
+            f.write(new_content)

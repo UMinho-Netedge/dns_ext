@@ -4,6 +4,7 @@ from jsonschema import validate
 import cherrypy
 
 from .schemas import *
+from .utils import *
 
 import pprint # Dictionaries pretty print (for testing purposes)
 
@@ -32,7 +33,20 @@ class SOA:
         self.ttl = ttl
 
     def update(self):
-        self.serial += 1
+        self.serial = str(int(self.serial) + 1)
+
+    @staticmethod
+    def from_str(soa_str: str) -> SOA:
+        soa = soa_str.split()
+        return SOA(
+            name=soa[0][:-1], 
+            mname=soa[3][:-1], 
+            rname=soa[4][:-1], 
+            serial=soa[5], 
+            refresh=soa[6], 
+            retry=soa[7],
+            expire=soa[8], 
+            ttl=soa[9])
 
     def __str__(self):
         return self.name + '. ' +                                               \
@@ -44,13 +58,49 @@ class SOA:
                self.refresh + ' ' +                                             \
                self.retry + ' ' +                                               \
                self.expire + ' ' +                                              \
-               self.ttl
+               self.ttl + '\n'
 
+class A_rec:
+    def __init__(self, name: str, ip: str):
+        self.name = name
+        self.class_ = "IN"
+        self.type = "A"
+        self.ip = ip
 
+    def __str__(self):
+        return self.name + '. ' +                                               \
+               self.class_ + ' ' +                                              \
+               self.type + ' ' +                                                \
+               self.ip + '\n'
 
 #################
 # ERROR CLASSES #
 #################
+
+class ProblemDetails:
+    def __init__(self, type: str, title: str, status: int, detail: str, instance: str):
+        """
+        :param type: A URI reference according to IETF RFC 3986 that identifies the problem type
+        :param title: A short, human-readable summary of the problem type
+        :param status: The HTTP status code for this occurrence of the problem
+        :param detail: A human-readable explanation specific to this occurrence of the problem
+        :param instance: A URI reference that identifies the specific occurrence of the problem
+        """
+        self.type = type
+        self.title = title
+        self.status = status
+        self.detail = detail
+        self.instance = instance
+
+    def to_json(self):
+        return dict(
+            type=self.type,
+            title=self.title,
+            status=self.status,
+            detail=self.detail,
+            instance=self.instance,
+        )
+        
 
 class Error:
     def __init__(self, type: str, title: str, status: int, detail: str, instance: str):
@@ -136,6 +186,17 @@ class PreconditionFailed(Error):
             type="xxx",
             title="Precondition Failed",
             status=412,
+            detail=str(e).split('\n')[0],
+            instance="xxx"
+        )
+
+class InternalServerError(Error):
+    def __init__(self, e: Exception):
+        Error.__init__(
+            self,
+            type="xxx",
+            title="Internal Server Error",
+            status=500,
             detail=str(e).split('\n')[0],
             instance="xxx"
         )

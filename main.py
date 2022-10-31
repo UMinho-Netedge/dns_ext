@@ -14,7 +14,10 @@
 
 # API Controllers
 import cherrypy
+import json
+
 from dns.api.controllers.zones_controller import (ZonesController)
+from dns.models import ProblemDetails
 
 def main():
 
@@ -43,6 +46,27 @@ def main():
         conditions=dict(method=["DELETE"]),
     )
 
+    ################################
+    # Records creation and removal #
+    ################################
+    dns_dispatcher.connect(
+        name="Post Record",
+        action="add_a_record",
+        controller=ZonesController,
+        route="/api/:zoneName/record",
+        conditions=dict(method=["POST"]),
+    )
+
+    dns_dispatcher.connect(
+        name="Delete Record",
+        action="delete_a_record",
+        controller=ZonesController,
+        route="/api/:zoneName/record",
+        conditions=dict(method=["DELETE"]),
+    )
+
+
+
 
     cherrypy.config.update(
         {"server.socket_host": "0.0.0.0", "server.socket_port": 8080}
@@ -56,6 +80,55 @@ def main():
     # Database Connection to all threads #
     ######################################
     cherrypy.engine.start()
+
+
+def error_page_404(status, message, traceback, version):
+    response = cherrypy.response
+    response.headers['Content-Type'] = 'application/json'
+    errorMessage = ProblemDetails(
+        type="xxxx",
+        title="Not Found.",
+        status=404,
+        detail="URI %s cannot be mapped to a valid resource." % cherrypy.request.path_info,
+        instance="xxx"
+    )
+    return json.dumps(errorMessage.to_json())
+
+def error_page_403(status, message, traceback, version):
+    response = cherrypy.response
+    response.headers['Content-Type'] = 'application/json'
+    errorMessage = ProblemDetails(
+        type="xxxx",
+        title="Forbidden.",
+        status=403,
+        detail="The operation is not allowed given the current status of the resource.",
+        instance="xxx"
+    )
+    return json.dumps(errorMessage.to_json())
+
+def error_page_400(status, message, traceback, version):
+    response = cherrypy.response
+    response.headers['Content-Type'] = 'application/json'
+    errorMessage = ProblemDetails(
+        type="xxxx",
+        title="Forbidden.",
+        status=400,
+        detail="The operation is not allowed given the current status of the resource.",
+        instance="xxx"
+    )
+    return json.dumps(errorMessage.to_json())
+
+def error_page_500(status, message, traceback, version):
+    response = cherrypy.response
+    response.headers['Content-Type'] = 'application/json'
+    errorMessage = ProblemDetails(
+        type="xxxx",
+        title="Internal Server Error.",
+        status=500,
+        detail="The server has encountered a situation it does not know how to handle.",
+        instance="xxx"
+    )
+    return json.dumps(errorMessage.to_json())
 
 
 if __name__ == "__main__":
