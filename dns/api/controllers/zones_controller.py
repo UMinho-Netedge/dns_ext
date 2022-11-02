@@ -87,8 +87,8 @@ class ZonesController:
 
 
     @json_out(cls=NestedEncoder)
-    def add_a_record(self, zoneName: str, name: str, ip: str):
-        a_record = A_rec(name, ip)
+    def add_a_record(self, zoneName: str, name: str, ip: str, ttl: str):
+        a_record = A_rec(name, ip, ttl)
         with open(FILES_PATH + "%s.db" %(zoneName), mode='a') as f:
             f.write(str(a_record))
 

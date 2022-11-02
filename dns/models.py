@@ -60,15 +60,18 @@ class SOA:
                self.expire + ' ' +                                              \
                self.ttl + '\n'
 
+
 class A_rec:
-    def __init__(self, name: str, ip: str):
+    def __init__(self, name: str, ip: str, ttl: str):
         self.name = name
         self.class_ = "IN"
         self.type = "A"
         self.ip = ip
+        self.ttl = ttl
 
     def __str__(self):
         return self.name + '. ' +                                               \
+               self.ttl + ' ' +                                                 \
                self.class_ + ' ' +                                              \
                self.type + ' ' +                                                \
                self.ip + '\n'
