@@ -69,7 +69,7 @@ def main():
 
 
     cherrypy.config.update(
-        {"server.socket_host": "0.0.0.0", "server.socket_port": 8080}
+        {"server.socket_host": "0.0.0.0", "server.socket_port": 8082}
     )
 
     dns_conf = {"/": {"request.dispatch": dns_dispatcher}}
