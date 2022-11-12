@@ -12,7 +12,7 @@ from json.decoder import JSONDecodeError
 from os.path import exists
 
 PORT = '1053'
-FILES_PATH = "/home/api/coredns/"
+FILES_PATH = "/tmp/coredns/"
 
 def zone_block_pattern(zoneName: str, port: str):
     return "\n%s:%s {\n    import snip_base\n    file /etc/coredns/%s.db {\n        reload 5s\n    }\n}" %(zoneName, port, zoneName)

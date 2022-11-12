@@ -15,11 +15,16 @@
 # API Controllers
 import cherrypy
 import json
+import os
+import stat
 
 from dns.api.controllers.zones_controller import (ZonesController)
 from dns.models import ProblemDetails
 
+FILES_PATH = "/tmp/coredns/"
+
 def main():
+    
 
     ##################################
     # Application support interface  #
@@ -132,4 +137,36 @@ def error_page_500(status, message, traceback, version):
 
 
 if __name__ == "__main__":
+
+    #############################################
+    # Create Corefile and zone0.db if not exist #
+    #############################################
+
+    corefile_path = FILES_PATH + "Corefile"
+    zone0_path = FILES_PATH + "zone0.db"
+
+    #cherrypy.log(f"Creating Corefile and zone0.db if not exist. PATH: {os.getcwd()}")
+
+    if not os.path.exists(corefile_path): 
+        #os.system("touch " + corefile_path)
+        with open('home/api/temp_files/Corefile','r') as corefile_tmp, open(corefile_path,'w+') as corefile:
+            # copy file
+            for line in corefile_tmp:
+                corefile.write(line)
+            # set permissions (rw-rw-rw-)
+            os.chmod(corefile_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
+        cherrypy.log(f"Corefile created at {corefile_path}")
+    
+
+    if not os.path.exists(zone0_path):
+        #os.system("touch " + zone0_path)
+        with open('home/api/temp_files/zone0.db','r') as zone0_tmp, open(zone0_path,'w+') as zone0:
+            # copy file
+            for line in zone0_tmp:
+                zone0.write(line)
+            # set permissions (rw-rw-rw-)
+            os.chmod(zone0_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
+
+        cherrypy.log(f"zone0.db created at {zone0_path}")
+
     main()
