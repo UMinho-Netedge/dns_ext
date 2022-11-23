@@ -6,10 +6,21 @@ import cherrypy
 from .schemas import *
 from .utils import *
 
-import pprint # Dictionaries pretty print (for testing purposes)
+# Dictionaries pretty print (for testing purposes)
+import pprint 
 
-################################################################################
+###################################
+# Classes used by the controllers #
+###################################
 class SOA:
+    """
+    This type represents the Start Of Authority (SOA) record which is required
+    for each zone. The SOA record contains the following fields:
+        - name of the zone
+        - e-mail address of the party responsible for administering the domain’s zone file, 
+        - the current serial number of the zone, 
+        - various timing elements (measured in seconds).
+    """
     def __init__(
         self, 
         name: str, 
@@ -19,7 +30,26 @@ class SOA:
         refresh: str, 
         retry: str, 
         expire: str, 
-        ttl: str):
+        ttl: str
+    ):
+        """
+        :param name: Name of the zone
+        :type name: str
+        :param mname: The <domain-name> of the name server that was the original or primary source of data for this zone.
+        :type mname: str
+        :param rname: Address of the party responsible for the zone. A period “.” is used in place of an “@” symbol. For email addresses that contain a period, this will be escaped with a slash “/”.
+        :type rname: str
+        :param serial: Version number of the zone. As you make changes to your zone file, the serial number will increase.
+        :type serial: str
+        :param refresh: Time interval, in seconds, before the zone should be refreshed (checking for a Serial Number increase).
+        :type refresh: str
+        :param retry: Time interval, in seconds, that should elapse before a failed refresh should be retried.
+        :type retry: str
+        :param expire: Time value, in seconds, that specifies the upper limit on the time interval that can elapse before the zone is no longer authoritative.
+        :type expire: str
+        :param ttl: Time to live (TTL) value, in seconds, that specifies the time a nameserver or resolver should cache a negative response.
+        :type ttl: str
+        """
 
         self.name = name
         self.class_ = "IN"
@@ -33,10 +63,21 @@ class SOA:
         self.ttl = ttl
 
     def update(self):
+        """
+        Updates the SOA record serial number incrementing it by one.
+        With this update, when the refresh time is reached, the zone will be updated.
+        """
         self.serial = str(int(self.serial) + 1)
 
     @staticmethod
     def from_str(soa_str: str) -> SOA:
+        """
+        Creates an SOA object from a string.
+        :param soa_str: SOA record in string format
+        :type soa_str: str
+        :return: SOA object
+        :rtype: SOA
+        """
         soa = soa_str.split()
         return SOA(
             name=soa[0][:-1], 
@@ -49,6 +90,11 @@ class SOA:
             ttl=soa[9])
 
     def __str__(self):
+        """
+        Returns the SOA record in string format.
+        :return: SOA record in string format
+        :rtype: str
+        """
         return self.name + '. ' +                                               \
                self.class_ + ' ' +                                              \
                self.type + ' ' +                                                \
@@ -62,7 +108,24 @@ class SOA:
 
 
 class A_rec:
+    """
+    This type represents the A record which is used to map a domain name to an IP address.
+    The A record contains the following fields:
+        - name of the domain
+        - record class (IN): There are three classes of DNS records: IN (Internet), CH (Chaosnet), and HS (Hesiod).
+        - record type (A): Where the format of a record is defined. There are several types of DNS records, including A, AAAA, CNAME, MX, NS, PTR, SOA, SRV, and TXT.
+        - IP address
+        - (Time to live) Amount of time in seconds that a DNS record will be cached by an outside DNS server or resolver.
+    """
     def __init__(self, name: str, ip: str, ttl: str):
+        """
+        :param name: Name of the domain
+        :type name: str
+        :param ip: IP address
+        :type ip: str
+        :param ttl: (Time to live) Amount of time in seconds that a DNS record will be cached by an outside DNS server or resolver.
+        :type ttl: str
+        """
         self.name = name
         self.class_ = "IN"
         self.type = "A"
@@ -70,11 +133,17 @@ class A_rec:
         self.ttl = ttl
 
     def __str__(self):
+        """
+        Returns the A record in string format.
+        :return: A record in string format
+        :rtype: str
+        """
         return self.name + '. ' +                                               \
                self.ttl + ' ' +                                                 \
                self.class_ + ' ' +                                              \
                self.type + ' ' +                                                \
                self.ip + '\n'
+
 
 #################
 # ERROR CLASSES #

@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-# API Controllers
+
 import cherrypy
 import json
 import os
@@ -23,8 +23,8 @@ from dns.models import ProblemDetails
 
 FILES_PATH = "/tmp/coredns/"
 
+# API Controllers
 def main():
-    
 
     ##################################
     # Application support interface  #
@@ -71,8 +71,7 @@ def main():
     )
 
 
-
-
+    ################################
     cherrypy.config.update(
         {"server.socket_host": "0.0.0.0", "server.socket_port": 8082}
     )
@@ -145,8 +144,7 @@ if __name__ == "__main__":
     corefile_path = FILES_PATH + "Corefile"
     zone0_path = FILES_PATH + "zone0.db"
 
-    #cherrypy.log(f"Creating Corefile and zone0.db if not exist. PATH: {os.getcwd()}")
-
+    # Corefile
     if not os.path.exists(corefile_path): 
         #os.system("touch " + corefile_path)
         with open('home/api/temp_files/Corefile','r') as corefile_tmp, open(corefile_path,'w+') as corefile:
@@ -156,8 +154,8 @@ if __name__ == "__main__":
             # set permissions (rw-rw-rw-)
             os.chmod(corefile_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
         cherrypy.log(f"Corefile created at {corefile_path}")
-    
 
+    # zone0.db
     if not os.path.exists(zone0_path):
         #os.system("touch " + zone0_path)
         with open('home/api/temp_files/zone0.db','r') as zone0_tmp, open(zone0_path,'w+') as zone0:
