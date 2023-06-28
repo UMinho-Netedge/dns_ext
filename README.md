@@ -8,6 +8,8 @@ The DNS Service provides service discovery by name, to access services produced 
 
 For more information on NetEdge-MEP check: https://github.com/UMinho-Netedge/NetEdge-MEP/
 
+If you use it, please refer to [[1]](#1).
+
 ## References
 <a id="1">[1]</a>
 Ferreira, V., Bastos, J., Martins, A., Araújo, P., Lori, N., Faria, J., Costa, A., López, H. (2023).
